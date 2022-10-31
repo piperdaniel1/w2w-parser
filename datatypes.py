@@ -282,28 +282,28 @@ class OutputWeek:
                                            'valign': 'top'}),
 
             workbook.add_format(properties={'bold': True, 
-                                           'font_color': 'yellow',
-                                           'bg_color': 'black',
+                                           'font_color': 'white',
+                                           'bg_color': '#833c0c',
                                            'valign': 'top'}),
 
             workbook.add_format(properties={'bold': True, 
-                                           'font_color': 'yellow',
-                                           'bg_color': 'black',
+                                           'font_color': 'white',
+                                           'bg_color': '#bf8f00',
                                            'valign': 'top'}),
 
             workbook.add_format(properties={'bold': True, 
-                                           'font_color': 'yellow',
-                                           'bg_color': 'black',
+                                           'font_color': 'white',
+                                           'bg_color': '#548235',
                                            'valign': 'top'}),
 
             workbook.add_format(properties={'bold': True, 
-                                           'font_color': 'yellow',
-                                           'bg_color': 'black',
+                                           'font_color': 'black',
+                                           'bg_color': '#fa63ff',
                                            'valign': 'top'}),
 
             workbook.add_format(properties={'bold': True, 
-                                           'font_color': 'yellow',
-                                           'bg_color': 'black',
+                                           'font_color': 'white',
+                                           'bg_color': '#9e2022',
                                            'valign': 'top'}),
 
             workbook.add_format(properties={'bold': True, 
