@@ -346,8 +346,8 @@ class OutputWeek:
         worksheet.write(18, 0, "11:00 PM")
 
         # ADD WEEKLY CHECKIN
-        worksheet.merge_range(10, 1, 10, len(self.output_slots[0].get_slot_list()),
-                "ALL PRESENT", checkin_format)
+        # worksheet.merge_range(10, 1, 10, len(self.output_slots[0].get_slot_list()),
+        #         "ALL PRESENT", checkin_format)
 
         # WRITE THE SHIFTS
         curr_col = 1

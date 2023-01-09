@@ -1,6 +1,36 @@
 from datatypes import *
 from typing import List
 import sys
+import requests
+
+def grab_text_from_w2w():
+    url = ""
+    try:
+        with open(".hashed_req") as f:
+            url = f.readlines()[0]
+    except FileNotFoundError:
+        return None
+
+    resp = requests.get(url)
+
+    # print(resp.text)
+    # print(resp.headers)
+    # print(resp.history)
+
+    session = resp.history[0].headers["Location"].split("=")[1]
+
+    full_sched = "https://www5.whentowork.com/cgi-bin/w2wE.dll/empfullschedule?SID={sid}&lmi="
+
+    resp = requests.get(full_sched.format(sid=session))
+
+    # print(resp.text)
+    # print(resp.headers)
+
+    main_text = resp.text.split("\n")
+
+    for line in main_text:
+        if "sdh(" in line:
+            return line
 
 def parse_st_time(st_str : str):
     first_quote = st_str.index('"', 0)
@@ -34,16 +64,31 @@ def classify_line(line : str):
     return "err"
 
 def main():
-    if len(sys.argv) != 3:
-        print("Must provide input/output file as command arg: python3 parse.py input_file output_file (will auto append .xlsx extension)")
-        return
-    else:
-        input_file = sys.argv[1]
-        output_file = sys.argv[2]
+    if len(sys.argv) < 2:
+        print("Usage: python parse.py <output_file> [--in <input_file>] [--meet <weekly meeting time>]")
+        print("Tip: Add a .hashed_req file to the directory to use the w2w interface. \
+            This file should contain the second when to work login request \
+            (can be found by logging in while monitoring the network requests sent.")
 
-    with open(input_file) as f:
-        line = f.readlines()[0]
-        lsplit = line.split(";")
+    output_file = sys.argv[1]
+    lsplit = []
+
+    if "--in" in sys.argv:
+        input_file = sys.argv[sys.argv.index("--in") + 1]
+    
+        try:
+            with open(input_file) as f:
+                line = f.readlines()[0]
+                lsplit = line.split(";")
+        except FileNotFoundError:
+            print("Error: That input file was not found. Exiting...")
+    else:
+        line = grab_text_from_w2w()
+        if line != None:
+            lsplit = line.split(";")
+        else:
+            print("Error: Could not get line from when to work and no fallback input file provided. Exiting...")
+            exit(1)
 
     curr_stime = None
     curr_etime = None
@@ -65,23 +110,9 @@ def main():
 
             emp = Employee(first_name, last_name)
 
-            if weekday == 0 and curr_stime.get_hours() == 15:
-                pass
-                # SKIP BECAUSE WEEKLY CHECKIN
-            else:
-                shifts.append(Shift(emp, curr_stime, curr_etime, weekday))
+            shifts.append(Shift(emp, curr_stime, curr_etime, weekday))
         elif classify_line(split) == "sdb":
             weekday += 1
-
-    '''
-    curr_weekday = None
-    for shift in shifts:
-        if curr_weekday != shift.get_weekday():
-            curr_weekday = shift.get_weekday()
-            print(f"\n=== {get_weekday_str(curr_weekday)} ===")
-
-        print(shift.get_str1())
-    '''
 
     out = OutputWeek(shifts)
     out.gen_xl_file(output_file)
