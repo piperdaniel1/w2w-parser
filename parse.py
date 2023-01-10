@@ -16,22 +16,33 @@ def grab_text_from_w2w():
         return None
 
     # contain payload in text/plain
-    # print("Sending request to " + url + " with payload " + payload)
-    resp = requests.post(url, data=payload, headers={"Content-Type": "text/plain"})
+    print("Sending request to " + url + " with payload " + payload)
+    resp = requests.post(url, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
 
     # print(resp.text)
     # print(resp.headers)
 
-    session = resp.history[-1].headers
+    # print(resp.text)
+
+    for i, elem in enumerate(resp.history):
+        print("History " + str(i) + ": " + str(elem.headers))
+
+    session = resp.history[-1].headers["Location"].split("=")[1]
 
     # print(resp.text)
     # print(resp.headers)
     # print(resp.history)
     # session = resp.history[0].headers["Location"].split("=")[1]
+              #  "https://www5.whentowork.com/cgi-bin/w2wEE.dll/empfullschedule?SID=1592568667419D&lmi="
+    full_sched = "https://www5.whentowork.com/cgi-bin/w2wEE.dll/empfullschedule?SID={sid}&lmi="
 
-    full_sched = "https://www5.whentowork.com/cgi-bin/w2wE.dll/empfullschedule?SID={sid}&lmi="
+    print("Sending request with url: ", full_sched.format(sid=session))
 
-    resp = requests.get(full_sched.format(sid=session))
+    resp = requests.get(full_sched.format(sid=session),
+            headers={"user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+                     "referer": f"https://www5.whentowork.com/cgi-bin/w2wEE.dll/home?SID={session}",
+                     "cookie": "sd2=F99FC6D9EB75657F8DD412731B01B3233B8CC4B7; sd1=FDE683591CE86EDD8A2FCCC519FA217C4B0C7E87; _gcl_au=1.1.1595137208.1672171001; _ga=GA1.2.259010626.1672171002; _gid=GA1.2.742086556.1673302819",
+                     "authority": f"www5.whentowork.com"})
 
     # print(resp.text)
     # print(resp.headers)
@@ -41,6 +52,8 @@ def grab_text_from_w2w():
     for line in main_text:
         if "sdh(" in line:
             return line
+
+    input("Press enter to show page...")
     
     for line in main_text:
         print(line)
