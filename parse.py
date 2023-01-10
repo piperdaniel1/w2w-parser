@@ -2,22 +2,32 @@ from datatypes import *
 from typing import List
 import sys
 import requests
+import time
+from datetime import date
 
 def grab_text_from_w2w():
     url = ""
     try:
         with open(".hashed_req") as f:
-            url = f.readlines()[0]
+            lines = f.readlines()
+            url = lines[0].strip("\n")
+            payload = lines[1].strip("\n")
     except FileNotFoundError:
         return None
 
-    resp = requests.get(url)
+    # contain payload in text/plain
+    # print("Sending request to " + url + " with payload " + payload)
+    resp = requests.post(url, data=payload, headers={"Content-Type": "text/plain"})
+
+    # print(resp.text)
+    # print(resp.headers)
+
+    session = resp.history[-1].headers
 
     # print(resp.text)
     # print(resp.headers)
     # print(resp.history)
-
-    session = resp.history[0].headers["Location"].split("=")[1]
+    # session = resp.history[0].headers["Location"].split("=")[1]
 
     full_sched = "https://www5.whentowork.com/cgi-bin/w2wE.dll/empfullschedule?SID={sid}&lmi="
 
@@ -31,6 +41,11 @@ def grab_text_from_w2w():
     for line in main_text:
         if "sdh(" in line:
             return line
+    
+    for line in main_text:
+        print(line)
+    
+    return None
 
 def parse_st_time(st_str : str):
     first_quote = st_str.index('"', 0)
@@ -71,6 +86,19 @@ def main():
             (can be found by logging in while monitoring the network requests sent.")
 
     output_file = sys.argv[1]
+
+    if output_file == "auto":
+        WEEK_ONE_START = date(2023, 1, 7)
+        today = date.today()
+
+        offset = (today - WEEK_ONE_START).days
+
+        weeks = offset // 7
+        weeks += 1
+
+        output_file = "Week " + str(weeks) + " Winter 2023 Schedule.xlsx"
+        pass
+
     lsplit = []
 
     if "--in" in sys.argv:
