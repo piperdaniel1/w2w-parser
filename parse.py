@@ -5,7 +5,7 @@ import requests
 import time
 from datetime import date
 
-def grab_text_from_w2w():
+def grab_text_from_w2w(getNext=False):
     url = ""
     try:
         with open(".hashed_req") as f:
@@ -22,8 +22,13 @@ def grab_text_from_w2w():
     dll = full_url.split("/")[4]
 
     full_sched = f"https://www5.whentowork.com/cgi-bin/{dll}/empfullschedule?SID={session}&lmi="
-
     resp = requests.get(full_sched)
+
+    if getNext:
+        full_sched += "&Week=Next"
+    
+    resp = requests.get(full_sched)
+
     main_text = resp.text.split("\n")
     for line in main_text:
         if "sdh(" in line:
@@ -57,14 +62,14 @@ def classify_line(line : str):
         return "st"
     elif "ss(" in line:
         return "ss"
-    elif "sdb()" in line:
-        return "sdb"
+    elif "sde()" in line:
+        return "sde"
     
     return "err"
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python parse.py <output_file> [--in <input_file>] [--meet <weekly meeting time>]")
+        print("Usage: python parse.py <output_file> [--in <input_file>] [--meet <weekly meeting time>] [--next]")
         print("Tip: Add a .hashed_req file to the directory to use the w2w interface. \
             This file should contain the second when to work login request \
             (can be found by logging in while monitoring the network requests sent.")
@@ -95,7 +100,7 @@ def main():
         except FileNotFoundError:
             print("Error: That input file was not found. Exiting...")
     else:
-        line = grab_text_from_w2w()
+        line = grab_text_from_w2w("--next" in sys.argv)
         if line != None:
             lsplit = line.split(";")
         else:
@@ -106,7 +111,7 @@ def main():
     curr_etime = None
 
     shifts: List[Shift] = []
-    weekday = -1
+    weekday = 0
 
     for split in lsplit:
         if classify_line(split) == "st":
@@ -123,7 +128,7 @@ def main():
             emp = Employee(first_name, last_name)
 
             shifts.append(Shift(emp, curr_stime, curr_etime, weekday))
-        elif classify_line(split) == "sdb":
+        elif classify_line(split) == "sde":
             weekday += 1
 
     out = OutputWeek(shifts)

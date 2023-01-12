@@ -354,8 +354,10 @@ class OutputWeek:
         open_time = DayTime(7, 0)
 
         for i, slot in enumerate(self.output_slots):
+            week = slot.get_slot_list()[0][0].get_weekday()
+
             worksheet.merge_range(1, curr_col,\
-                    1, curr_col+len(slot.get_slot_list())-1, get_weekday_str(i), week_format)
+                    1, curr_col+len(slot.get_slot_list())-1, get_weekday_str(week), week_format)
 
             for shift_col in slot.get_slot_list():
                 for shift in shift_col:
