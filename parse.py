@@ -17,16 +17,11 @@ def grab_text_from_w2w():
 
     resp = requests.post(url, data=payload)
 
-    for i, elem in enumerate(resp.history):
-        print("History " + str(i) + ": " + str(elem.headers))
-
     session = resp.history[-1].headers["Location"].split("=")[1]
     full_url = resp.history[-1].headers["Location"]
     dll = full_url.split("/")[4]
 
     full_sched = f"https://www5.whentowork.com/cgi-bin/{dll}/empfullschedule?SID={session}&lmi="
-
-    print("Sending request with url: ", full_sched)
 
     resp = requests.get(full_sched)
     main_text = resp.text.split("\n")
