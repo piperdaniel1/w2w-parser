@@ -15,15 +15,7 @@ def grab_text_from_w2w():
     except FileNotFoundError:
         return None
 
-    # contain payload in text/plain
-    print("Sending request to " + url + " with payload " + payload)
-
-    resp = requests.post(url, data=payload, headers={"Content-Type": "application/x-www-form-urlencoded"})
-
-
-    # print(resp.text)
-    # print(resp.headers)
-    # print(resp.text)
+    resp = requests.post(url, data=payload)
 
     for i, elem in enumerate(resp.history):
         print("History " + str(i) + ": " + str(elem.headers))
@@ -32,34 +24,15 @@ def grab_text_from_w2w():
     full_url = resp.history[-1].headers["Location"]
     dll = full_url.split("/")[4]
 
-    # print(resp.text)
-    # print(resp.headers)
-    # print(resp.history)
-    # session = resp.history[0].headers["Location"].split("=")[1]
-              #  "https://www5.whentowork.com/cgi-bin/w2wEE.dll/empfullschedule?SID=1592568667419D&lmi="
-              #  "https://www5.whentowork.com/cgi-bin/w2wE4.dll/empfullschedule?SID=1101376613419D&lmi="
     full_sched = f"https://www5.whentowork.com/cgi-bin/{dll}/empfullschedule?SID={session}&lmi="
 
     print("Sending request with url: ", full_sched)
 
-    resp = requests.get(full_sched.format(sid=session),
-            headers={"user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
-                     "referer": f"https://www5.whentowork.com/cgi-bin/{url}/home?SID={session}",
-                     "authority": f"www5.whentowork.com"})
-
-    # print(resp.text)
-    # print(resp.headers)
-
+    resp = requests.get(full_sched)
     main_text = resp.text.split("\n")
-
     for line in main_text:
         if "sdh(" in line:
             return line
-
-    input("Press enter to show page...")
-    
-    for line in main_text:
-        print(line)
     
     return None
 
