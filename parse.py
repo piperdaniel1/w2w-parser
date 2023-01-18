@@ -6,6 +6,9 @@ import time
 from datetime import date
 
 def grab_text_from_w2w(getNext=False):
+    print("Obtaining text from When to Work:")
+    print(" > Logging in... ", end="", flush=True)
+
     url = ""
     try:
         with open(".hashed_req") as f:
@@ -17,6 +20,9 @@ def grab_text_from_w2w(getNext=False):
 
     resp = requests.post(url, data=payload)
 
+    print("done")
+    print(" > Accessing current schedule... ", end="", flush=True)
+
     session = resp.history[-1].headers["Location"].split("=")[1]
     full_url = resp.history[-1].headers["Location"]
     dll = full_url.split("/")[4]
@@ -24,14 +30,20 @@ def grab_text_from_w2w(getNext=False):
     full_sched = f"https://www5.whentowork.com/cgi-bin/{dll}/empfullschedule?SID={session}&lmi="
     resp = requests.get(full_sched)
 
-    if getNext:
-        full_sched += "&Week=Next"
-    
-    resp = requests.get(full_sched)
+    print("done")
 
+    if getNext:
+        print(" > Accessing next schedule... ", end="", flush=True)
+        full_sched += "&Week=Next"
+        resp = requests.get(full_sched)
+        print("done")
+
+    print(" > Parsing response... ", end="", flush=True)
+    time.sleep(0.5)
     main_text = resp.text.split("\n")
     for line in main_text:
         if "sdh(" in line:
+            print("done")
             return line
     
     return None
@@ -74,6 +86,7 @@ def classify_line(line : str):
     return "err"
 
 def main():
+    stime = time.time()
     if len(sys.argv) < 2:
         print("Usage: python parse.py <output_file> [--in <input_file>] [--next]")
         print("Tip: Add a .hashed_req file to the directory to use the w2w interface. \
@@ -91,12 +104,14 @@ def main():
         weeks = offset // 7
         weeks += 1
 
-        output_file = "Week " + str(weeks) + " Winter 2023 Schedule.xlsx"
+        output_file = "Week " + str(weeks) + " Winter 2023 Schedule"
         pass
 
     lsplit = []
 
     if "--in" in sys.argv:
+        print("Obtaining text from file:")
+        print(" > Reading file... ", end="", flush=True)
         input_file = sys.argv[sys.argv.index("--in") + 1]
     
         try:
@@ -105,6 +120,7 @@ def main():
                 lsplit = line.split(";")
         except FileNotFoundError:
             print("Error: That input file was not found. Exiting...")
+        print("done")
     else:
         line = grab_text_from_w2w("--next" in sys.argv)
         if line != None:
@@ -131,8 +147,16 @@ def main():
     curr_stime = None
     curr_etime = None
 
-    for split in lsplit:
-        print(split)
+    for i, split in enumerate(lsplit):
+        if i == len(lsplit) - 1:
+            print("                                                         ", end="\r")
+            print(f"Parsing input lines {i+1}/{len(lsplit)}... ", end="", flush=True)
+        else:
+            print(f"Parsing input lines {i+1}/{len(lsplit)}...       ", end="\r")
+        
+        time.sleep(0.005)
+        
+
         if classify_line(split) == "st":
             curr_stime, curr_etime = parse_st_time(split)
         elif classify_line(split) == "ss":
@@ -161,9 +185,15 @@ def main():
             
             is_weekly_meeting = False
 
+    print("done")
+
+    print("\nFormatting Excel file:")
     out = OutputWeek(shifts)
     out.gen_xl_file(output_file, meeting)
-    print("Complete.")
+
+    final_time = round(time.time() - stime, 2)
+
+    print(f"Complete. Finished file is '{output_file}.xlsx'. Took {final_time}s.")
 
 if __name__ == "__main__":
     main()

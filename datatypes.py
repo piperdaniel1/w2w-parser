@@ -1,6 +1,7 @@
 from typing import List, Dict
 import xlsxwriter as xl
 from xlsxwriter.workbook import Format
+import time
 
 #######################################
 #
@@ -57,6 +58,12 @@ class DayTime:
             pmins = "0" + str(pmins)
         
         return f"{phours}:{pmins}{suffix}"
+    
+    def __str__(self):
+        return f"DayTime<{self.get_str1()} - {self.get_hours()} hours>"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def __eq__(self, __o: "DayTime") -> bool:
         if type(__o) != type(self):
@@ -216,6 +223,7 @@ class OutputWeek:
                 self.output_slots.append(OutputSlot(curr_list))
 
     def gen_xl_file(self, title : str, meeting):
+        print(" > Writing headings and labels... ", end="", flush=True)
         workbook = xl.Workbook(title.replace(" ", "-") + ".xlsx")
         # ABSOLUTE DEFAULT if no custom format is left
         fallback_format = workbook.add_format(properties={'bold': True, 
@@ -315,6 +323,9 @@ class OutputWeek:
         # Store which employee gets which format
         reserved_fmt_dict : Dict[str, Format] = {}
 
+        # Excel has a limit of 31 characters for sheet names
+        if len(title) > 31:
+            title = title[:31]
         worksheet = workbook.add_worksheet(title)
 
         SHEET_WIDTH = self.get_total_slot_width()
@@ -346,15 +357,27 @@ class OutputWeek:
         worksheet.write(18, 0, "11:00 PM")
 
         # ADD WEEKLY CHECKIN
-        # worksheet.merge_range(10, 1, 10, len(self.output_slots[0].get_slot_list()),
-        #         "ALL PRESENT", checkin_format)
+        if meeting["time"] != None:
+            worksheet.merge_range(meeting["time"].get_hours()-5, 1, meeting["time"].get_hours()-5, len(self.output_slots[meeting["day"]].get_slot_list()),
+                    "ALL PRESENT", checkin_format)
 
         # WRITE THE SHIFTS
         curr_col = 1
         open_time = DayTime(7, 0)
 
+        time.sleep(0.3)
+        print("done")
+
         for i, slot in enumerate(self.output_slots):
             week = slot.get_slot_list()[0][0].get_weekday()
+
+            if i == len(self.output_slots)-1:
+                print("                                               ", end="\r")
+                print(f" > Entering shifts for day {week+1}... ", end="", flush=True)
+            else:
+                print(f" > Entering shifts for day {week+1}... ", end="\r")
+            
+            time.sleep(0.25)
 
             worksheet.merge_range(1, curr_col,\
                     1, curr_col+len(slot.get_slot_list())-1, get_weekday_str(week), week_format)
@@ -382,6 +405,7 @@ class OutputWeek:
                         worksheet.write(row, curr_col, shift.employee.first_name, emp_format)
                 curr_col += 1
         workbook.close()
+        print("done")
 
     def get_total_slot_width(self):
         total = 0
