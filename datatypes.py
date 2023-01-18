@@ -215,7 +215,7 @@ class OutputWeek:
             if len(curr_list) != 0:
                 self.output_slots.append(OutputSlot(curr_list))
 
-    def gen_xl_file(self, title : str):
+    def gen_xl_file(self, title : str, meeting):
         workbook = xl.Workbook(title.replace(" ", "-") + ".xlsx")
         # ABSOLUTE DEFAULT if no custom format is left
         fallback_format = workbook.add_format(properties={'bold': True, 

@@ -64,12 +64,18 @@ def classify_line(line : str):
         return "ss"
     elif "sde()" in line:
         return "sde"
+    elif "gl()" in line:
+        return "gl"
+    elif "weekly" in line.lower() \
+        or "meeting" in line.lower() \
+        or "checkin" in line.lower():
+        return "meet"
     
     return "err"
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python parse.py <output_file> [--in <input_file>] [--meet <weekly meeting time>] [--next]")
+        print("Usage: python parse.py <output_file> [--in <input_file>] [--next]")
         print("Tip: Add a .hashed_req file to the directory to use the w2w interface. \
             This file should contain the second when to work login request \
             (can be found by logging in while monitoring the network requests sent.")
@@ -113,7 +119,20 @@ def main():
     shifts: List[Shift] = []
     weekday = 0
 
+    is_weekly_meeting = False
+    meeting: Dict[str, None | DayTime | int] = {
+        "time": None,
+        "day": None
+    }
+
+    emp_name = ""
+    first_name = ""
+    last_name = ""
+    curr_stime = None
+    curr_etime = None
+
     for split in lsplit:
+        print(split)
         if classify_line(split) == "st":
             curr_stime, curr_etime = parse_st_time(split)
         elif classify_line(split) == "ss":
@@ -125,14 +144,25 @@ def main():
             if curr_stime == None or curr_etime == None:
                 raise ValueError("Cannot create shift without time.")
 
-            emp = Employee(first_name, last_name)
-
-            shifts.append(Shift(emp, curr_stime, curr_etime, weekday))
         elif classify_line(split) == "sde":
             weekday += 1
+        elif classify_line(split) == "meet":
+            is_weekly_meeting = True
+            if meeting["time"] == None:
+                meeting["time"] = curr_stime
+                meeting["day"] = weekday
+        elif classify_line(split) == "gl":
+            if not is_weekly_meeting:
+                # add the last employee to the shift list
+                assert(curr_stime != None and curr_etime != None)
+                assert(first_name != "" and last_name != "")
+                emp = Employee(first_name, last_name)
+                shifts.append(Shift(emp, curr_stime, curr_etime, weekday))
+            
+            is_weekly_meeting = False
 
     out = OutputWeek(shifts)
-    out.gen_xl_file(output_file)
+    out.gen_xl_file(output_file, meeting)
     print("Complete.")
 
 if __name__ == "__main__":
