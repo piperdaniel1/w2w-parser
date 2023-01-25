@@ -142,12 +142,13 @@ def main():
     }
 
     emp_name = ""
-    first_name = ""
-    last_name = ""
+    first_name = []
+    last_name = []
     curr_stime = None
     curr_etime = None
 
     for i, split in enumerate(lsplit):
+        # print(split)
         if i == len(lsplit) - 1:
             print("                                                         ", end="\r")
             print(f"Parsing input lines {i+1}/{len(lsplit)}... ", end="", flush=True)
@@ -159,29 +160,47 @@ def main():
 
         if classify_line(split) == "st":
             curr_stime, curr_etime = parse_st_time(split)
-        elif classify_line(split) == "ss":
+        elif classify_line(split) == "ss" and is_weekly_meeting == False:
             emp_name = parse_ss_emp(split)
             name_list = emp_name.split(" ")
-            first_name = name_list[0]
-            last_name = name_list[1]
+            first_name.append(name_list[0])
+            last_name.append(name_list[1])
 
             if curr_stime == None or curr_etime == None:
                 raise ValueError("Cannot create shift without time.")
 
         elif classify_line(split) == "sde":
+            # add the last employee to the shift lift if there is one
+            if curr_stime != None and curr_etime != None and len(first_name) != 0:
+                for i in range(len(first_name)):
+                    emp = Employee(first_name[i], last_name[i])
+                    shifts.append(Shift(emp, curr_stime, curr_etime, weekday))
+                # reset to prevent duplicates
+                first_name = []
+                last_name = []
+
             weekday += 1
         elif classify_line(split) == "meet":
             is_weekly_meeting = True
             if meeting["time"] == None:
                 meeting["time"] = curr_stime
                 meeting["day"] = weekday
+            if len(first_name) > 0:
+                first_name.pop()
+                last_name.pop()
         elif classify_line(split) == "gl":
             if not is_weekly_meeting:
                 # add the last employee to the shift list
                 assert(curr_stime != None and curr_etime != None)
-                assert(first_name != "" and last_name != "")
-                emp = Employee(first_name, last_name)
-                shifts.append(Shift(emp, curr_stime, curr_etime, weekday))
+                assert(len(first_name) != 0)
+
+                for i in range(len(first_name)):
+                    emp = Employee(first_name[i], last_name[i])
+                    shifts.append(Shift(emp, curr_stime, curr_etime, weekday))
+
+                # reset to prevent duplicates
+                first_name = []
+                last_name = []
             
             is_weekly_meeting = False
 
