@@ -10,13 +10,30 @@ def grab_text_from_w2w(getNext=False):
     print(" > Logging in... ", end="", flush=True)
 
     url = ""
-    try:
-        with open(".hashed_req") as f:
-            lines = f.readlines()
-            url = lines[0].strip("\n")
-            payload = lines[1].strip("\n")
-    except FileNotFoundError:
-        return None
+    while True:
+        try:
+            with open(".hashed_req") as f:
+                lines = f.readlines()
+                url = lines[0].strip("\n")
+                payload = lines[1].strip("\n")
+            break
+        except FileNotFoundError:
+            print("Error! You don't have a .hashed_req file, so I can't login to When To Work.")
+            res = input("Do you want to create one now [Y/n]? ")
+
+            if "y" in res.lower():
+                url = input(" > Enter the URL of the login request (can be found by logging in while monitoring the network requests sent): ")
+                payload = input(" > Enter the payload of the login request (can be found by logging in while monitoring the network requests sent): ")
+                if url == "":
+                    url = "https://whentowork.com/cgi-bin/w2w.dll/login"
+                
+                if payload == "":
+                    print("Cannot use a null payload. Exiting...")
+                    return None
+                with open(".hashed_req", "w") as f:
+                    f.write(url + "\n" + payload)
+            else:
+                return None
 
     resp = requests.post(url, data=payload)
 
